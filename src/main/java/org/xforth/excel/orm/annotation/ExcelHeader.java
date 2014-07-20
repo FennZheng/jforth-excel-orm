@@ -9,8 +9,4 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ExcelHeader {
     String title() default "";
-
-    int headerOrder();
-
-    String[] validData() default {};
 }
