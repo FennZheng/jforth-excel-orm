@@ -2,7 +2,10 @@ package org.xforth.excel.orm.entity;
 
 import org.xforth.excel.orm.exception.HeaderNotMatchException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * thread unsafe
@@ -30,5 +33,13 @@ public final class HeaderMeta {
     }
     public String getPropertyNameByHeaderTitle(String headerTitle){
         return titlePropertyMap.get(headerTitle);
+    }
+    public List<String> getHeaderTitle(){
+        List<String> headerTitleList = new ArrayList<String>(titlePropertyMap.size());
+        Iterator<String> iterator = titlePropertyMap.keySet().iterator();
+        while(iterator.hasNext()){
+            headerTitleList.add(iterator.next());
+        }
+        return headerTitleList;
     }
 }

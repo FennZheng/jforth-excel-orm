@@ -21,9 +21,7 @@ public final class HeaderInfo {
             +indexTitleMap.get(index)+" new value："+headerTitle);
         }
         if(!headerMeta.contains(headerTitle)){
-            if(logger.isDebugEnabled()){
-                logger.debug("unMatched header title(ignore) :"+headerTitle);
-            }
+            logger.warn("unMatched header title :"+headerTitle);
         }else {
             indexTitleMap.put(index, headerTitle);
         }
@@ -39,7 +37,7 @@ public final class HeaderInfo {
         if(headerTitle==null){
             throw new HeaderNotMatchException("headerTitle not found by index:"+index);
         }else{
-            headerMeta.getPropertyNameByHeaderTitle(headerTitle);
+            return headerMeta.getPropertyNameByHeaderTitle(headerTitle);
         }
     }
 }
