@@ -4,101 +4,80 @@ import com.alibaba.fastjson.JSON;
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.write.*;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.xforth.excel.orm.entity.ExcelEntity;
-import org.xforth.excel.orm.annotation.ExcelSheet;
+import org.xforth.excel.orm.entity.BaseExcelEntity;
+import org.xforth.excel.orm.entity.HeaderInfo;
+import org.xforth.excel.orm.entity.HeaderMeta;
+import org.xforth.excel.orm.entity.MutilateSheetExcelEntity;
+import org.xforth.excel.orm.util.ExcelUtils;
 import org.xforth.excel.orm.util.ReflectionUtils;
 import org.xforth.orm.excel.anotation.ExcelSheet;
 import org.xforth.orm.excel.entity.ExcelEntity;
 import org.xforth.orm.excel.util.ReflectionUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 /***
  * Excel Service:
- * 1.根据Excel生成Entity的List
- * 2.检查Excel列头
- * 3.生成Excel模板
- * 5.根据Excel生成包含Entity信息的JSON
- * 6.生成Excel文件
- * @author vernon.zheng
- * @version 1.0.1
- * @param <T> extends ExcelEntity
+ * 1.excel file -> bean list
+ * 2.bean list -> export excel
+ * 3.export excel template
+ * @param <T> extends BaseExcelEntity
  */
-public class ExcelBaseService<T extends ExcelEntity> {
+public class ExcelBaseService<T extends BaseExcelEntity> {
 
+    protected static final int MAX_HEADER_SIZE = 20;
 	protected Class<T> entityClass;
-    protected HashSet<String> headerTitleSet;
+    protected HeaderMeta headerMeta;
     protected String[] sheetNames;
 
 	public ExcelBaseService() throws IllegalAccessException, InstantiationException {
 		this.entityClass = ReflectionUtils.getSuperClassGenricType(getClass());
-        ExcelEntity entityInstance = entityClass.newInstance();
-        headerTitleSet = entityInstance.getHeaderMeta();
+        BaseExcelEntity entityInstance = entityClass.newInstance();
+        headerMeta = entityInstance.getHeaderMeta();
         sheetNames = entityInstance.getSheetMeta();
 	}
 
 	/***
-	 * 根据Excel 生成Entity的List
+	 * excelfile -> bean list
 	 * 
-	 * @param file：Excel 2003  
+	 * @param file：Excel file
 	 * @return List<T>
-	 * @throws Exception 
-	 */
+	 * @throws IOException
+     * @throws IllegalAccessException
+     */
 	@SuppressWarnings("unchecked")
-	protected List<T> excelToList(File file) throws Exception {
+	protected List<T> generateEntity(File file) throws IOException, IllegalAccessException, InstantiationException {
 		List<T> beanList = new ArrayList<T>();
-
         FileInputStream fis = new FileInputStream(file); // 根据excel文件路径创建文件流
         POIFSFileSystem fs = new POIFSFileSystem(fis); // 利用poi读取excel文件流
         HSSFWorkbook wb = new HSSFWorkbook(fs); // 读取excel工作簿
         if(sheetNames==null||sheetNames.length<=0) {
-            HSSFSheet sheet = wb.getSheetAt(0);
-            sheet
+            List<HSSFSheet> sheetList = ExcelUtils.getSheetsByNames(wb, sheetNames);
+            for(HSSFSheet sheet:sheetList){
+                int rowNum = sheet.getPhysicalNumberOfRows();
+                if(rowNum>0){
+                    HeaderInfo headerInfo = ExcelUtils.buildHeaderInfo(sheet,headerMeta);
+                    for(int i=1;i<rowNum;i++){
+                        HSSFRow row = sheet.getRow(i);
+                        int colNum = row.getPhysicalNumberOfCells();
+                        T t = entityClass.newInstance();
+                        t.setSheetName(sheet.getSheetName());
+                        for(int j=0;j<colNum;j++){
+                            HSSFCell cell = row.getCell(j);
+                            String cellVal = cell.getStringCellValue();
+                            ReflectionUtils.invokeSetterMethod(t,headerInfo.getPropertyNameByColumnIndex(j)
+                            ,cellVal);
+                        }
+                        beanList.add(t);
+                    }
+                }
+            }
         }
-
-        Workbook workbook = null;
-			try {
-				workbook = Workbook.getWorkbook(file);
-				Sheet sheet = workbook.getSheet(0);
-				int row = sheet.getRows();
-				int col = sheet.getColumns()>headerOrderlist.size()?headerOrderlist.size():sheet.getColumns();
-				for (int r = 0; r < row; r++) {
-					String[] rowValue = new String[col];
-					if (r == 0) {
-						for (int c = 0; c < col; c++) {
-							rowValue[c] = sheet.getCell(c, r).getContents() != null ? sheet
-									.getCell(c, r).getContents()
-									: "";
-						}
-						if (checkHeader(rowValue,headerOrderlist) == false){
-							throw new Exception(
-									"excelToList exception: excel的标题不一致，请检查");
-						}
-					} else {
-						T t = entityClass.newInstance();
-						for (int c = 0; c < col; c++) {
-							rowValue[c] = sheet.getCell(c, r).getContents() != null ? sheet
-									.getCell(c, r).getContents()
-									: "";
-							ReflectionUtils.invokeSetterMethod(t,
-									headerOrderlist.get(c)[2], rowValue[c]);
-						}
-						beanList.add(t);
-					}
-				}
-			} catch (Exception e) {
-				throw new Exception("excelToList exception: " + e);
-			}
 		return beanList;
 	}
     /***
