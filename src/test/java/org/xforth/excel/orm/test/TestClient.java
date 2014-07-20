@@ -22,13 +22,11 @@ public class TestClient extends AbstractJUnit4SpringContextTests {
     }
     @Test
     public void testExportExcelTemplate() throws URISyntaxException, IllegalAccessException, IOException, InstantiationException {
-        File file = Paths.get(this.getClass().getClassLoader().getResource("test-template.xls").toURI()).toFile();
-        testExcelService.dlExcelTemplate(file);
+        testExcelService.dlExcelTemplate(new File("test1.xls"));
     }
     @Test
     public void testExportExcel() throws Exception {
-        File file = Paths.get(this.getClass().getClassLoader().getResource("test.xls").toURI()).toFile();
-        testExcelService.dlExcel(file);
+        testExcelService.dlExcel(new File("test2.xls"));
     }
 
 }

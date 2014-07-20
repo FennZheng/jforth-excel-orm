@@ -8,6 +8,7 @@ import org.xforth.excel.orm.service.BaseExcelService;
 import org.xforth.excel.orm.test.entity.TestExcelEntity;
 
 import java.io.*;
+import java.util.List;
 
 public class TestExcelService extends BaseExcelService<TestExcelEntity> {
     private static final Logger logger = LoggerFactory.getLogger(TestExcelService.class);
@@ -23,7 +24,7 @@ public class TestExcelService extends BaseExcelService<TestExcelEntity> {
         entity.setFirstName("Tim");
         entity.setSecondName("Wang");
         SheetGroup sheetGroup = createSheetGroup();
-        sheetGroup.add(new TestExcelEntity());
+        sheetGroup.add(entity);
         return sheetGroup;
     }
     public void dlExcel(File file) throws Exception {
@@ -32,6 +33,7 @@ public class TestExcelService extends BaseExcelService<TestExcelEntity> {
     }
     public void importExcel(File file) throws IOException, IllegalAccessException, InstantiationException {
         FileInputStream fis = new FileInputStream(file);
-        logger.info(JSON.toJSONString(generateEntity(fis)));
+        List<TestExcelEntity> resultList = generateEntity(fis);
+        logger.info(JSON.toJSONString(resultList));
     }
 }

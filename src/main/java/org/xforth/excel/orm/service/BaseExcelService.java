@@ -2,7 +2,10 @@ package org.xforth.excel.orm.service;
 
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xforth.excel.orm.entity.*;
+import org.xforth.excel.orm.exception.SheetNotFoundException;
 import org.xforth.excel.orm.util.ExcelUtils;
 import org.xforth.excel.orm.util.ReflectionUtils;
 import java.io.*;
@@ -19,6 +22,7 @@ import java.util.List;
  */
 public class BaseExcelService<T extends BaseExcelEntity> {
 
+    private static final Logger logger = LoggerFactory.getLogger(BaseExcelService.class);
     protected static final int MAX_HEADER_SIZE = 20;
 	private Class<T> entityClass;
     private static HeaderMeta headerMeta;
@@ -38,18 +42,17 @@ public class BaseExcelService<T extends BaseExcelEntity> {
 	/***
 	 * excelfile -> bean list
 	 * 
-	 * @param FileInputStream：Excel file inputstream
+	 * @param fis：Excel file inputstream
 	 * @return List<T>
 	 * @throws IOException
      * @throws IllegalAccessException
      */
-	@SuppressWarnings("unchecked")
 	protected List<T> generateEntity(FileInputStream fis) throws IOException, IllegalAccessException, InstantiationException {
         try {
             List<T> beanList = new ArrayList<T>();
             POIFSFileSystem fs = new POIFSFileSystem(fis);
             HSSFWorkbook wb = new HSSFWorkbook(fs);
-            if (sheetNames == null || sheetNames.length <= 0) {
+            if (sheetNames != null && sheetNames.length > 0) {
                 List<HSSFSheet> sheetList = ExcelUtils.getSheetsByNames(wb, sheetNames);
                 for (HSSFSheet sheet : sheetList) {
                     int rowNum = sheet.getPhysicalNumberOfRows();
@@ -62,7 +65,7 @@ public class BaseExcelService<T extends BaseExcelEntity> {
                             t.setSheetName(sheet.getSheetName());
                             for (int j = 0; j < colNum; j++) {
                                 HSSFCell cell = row.getCell(j);
-                                String cellVal = cell.getStringCellValue();
+                                String cellVal = ExcelUtils.getStringCellValue(cell);
                                 ReflectionUtils.invokeSetterMethod(t, headerInfo.getPropertyNameByColumnIndex(j)
                                         , cellVal);
                             }
@@ -70,8 +73,13 @@ public class BaseExcelService<T extends BaseExcelEntity> {
                         }
                     }
                 }
+            }else{
+                throw new SheetNotFoundException("sheet name not found");
             }
             return beanList;
+        }catch (Exception e){
+            logger.error("generateEntity exception:"+e);
+            throw e;
         }finally {
             fis.close();
         }
@@ -88,7 +96,11 @@ public class BaseExcelService<T extends BaseExcelEntity> {
             HSSFWorkbook wb = new HSSFWorkbook();
             fillBlankWorkbook(wb);
             wb.write(os);
+        }catch (Exception e){
+            logger.error("dlExcelTemplate exception:"+e);
+            throw e;
         }finally {
+            os.flush();
             os.close();
         }
         /*response.setContentType( "application/octet-stream ");
@@ -96,12 +108,7 @@ public class BaseExcelService<T extends BaseExcelEntity> {
         response.getOutputStream().close();*/
 	}
 
-    private void fillBlankWorkbook(HSSFWorkbook wb) {
-        for(String sheetName:sheetNames){
-            HSSFSheet sheet = wb.createSheet(sheetName);
-            ExcelUtils.writeSheetHeader(sheet, headerMeta);
-        }
-    }
+
 
     /***
 	 * download excel
@@ -114,27 +121,51 @@ public class BaseExcelService<T extends BaseExcelEntity> {
             HSSFWorkbook wb = new HSSFWorkbook();
             fillWorkbook(sheetGroup, wb);
             wb.write(os);
+        }catch (Exception e){
+            logger.error("dlExcel exception:"+e);
+            throw e;
         }finally {
+            os.flush();
             os.close();
         }
 	}
 
+    private void fillBlankWorkbook(HSSFWorkbook wb) {
+        for(String sheetName:sheetNames){
+            fillBlankSheet(wb, sheetName);
+        }
+    }
+
     private void fillWorkbook(SheetGroup sheetGroup, HSSFWorkbook wb) {
         List<String> headerTitleList = headerMeta.getHeaderTitle();
         for(String sheetName:sheetNames){
-            HSSFSheet sheet = wb.createSheet(sheetName);
-            ExcelUtils.writeSheetHeader(sheet, headerMeta);
             List<BaseExcelEntity> entityList = sheetGroup.getBySheetName(sheetName);
-            int rowNum = 1;
-            for(BaseExcelEntity entity:entityList){
-                HSSFRow row = sheet.createRow(rowNum++);
-                for(int col=0;col<headerTitleList.size();col++) {
-                    String rowVal = ReflectionUtils.invokeGetterMethod(entity,
-                            headerMeta.getPropertyNameByHeaderTitle(headerTitleList.get(col))).toString();
-                    HSSFCell cell = row.createCell(col);
-                    cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-                    cell.setCellValue(rowVal);
-                }
+            if(entityList==null){
+                fillBlankSheet(wb, sheetName);
+            }else {
+                fillSheet(wb, headerTitleList, sheetName, entityList);
+            }
+        }
+    }
+
+    private void fillBlankSheet(HSSFWorkbook wb, String sheetName) {
+        HSSFSheet sheet = wb.createSheet(sheetName);
+        ExcelUtils.writeSheetHeader(sheet, headerMeta);
+    }
+
+    private void fillSheet(HSSFWorkbook wb, List<String> headerTitleList, String sheetName, List<BaseExcelEntity> entityList) {
+        HSSFSheet sheet = wb.createSheet(sheetName);
+        ExcelUtils.writeSheetHeader(sheet, headerMeta);
+        int rowNum = 1;
+        for (BaseExcelEntity entity : entityList) {
+            HSSFRow row = sheet.createRow(rowNum++);
+            for (int col = 0; col < headerTitleList.size(); col++) {
+                Object rowObject = ReflectionUtils.invokeGetterMethod(entity,
+                        headerMeta.getPropertyNameByHeaderTitle(headerTitleList.get(col)));
+                HSSFCell cell = row.createCell(col);
+                ExcelUtils.setDefaultCellStyle(cell.getCellStyle());
+                cell.setCellType(HSSFCell.CELL_TYPE_STRING);
+                cell.setCellValue(rowObject==null?null:rowObject.toString());
             }
         }
     }
