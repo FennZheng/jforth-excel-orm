@@ -1,9 +1,6 @@
 package org.xforth.excel.orm.util;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.usermodel.*;
 import org.xforth.excel.orm.entity.BaseExcelEntity;
 import org.xforth.excel.orm.entity.HeaderInfo;
 import org.xforth.excel.orm.entity.HeaderMeta;
@@ -48,6 +45,7 @@ public class ExcelUtils {
         for(int i=0;i<headerTitleList.size();i++){
             HSSFCell cell = headerRow.createCell(i);
             cell.setCellValue(headerTitleList.get(i));
+            cell.getCellStyle().setLocked(true);
         }
     }
 }

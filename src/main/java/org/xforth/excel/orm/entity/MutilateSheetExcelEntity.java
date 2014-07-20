@@ -2,7 +2,10 @@ package org.xforth.excel.orm.entity;
 
 import org.xforth.excel.orm.exception.SheetNotFoundException;
 
-public abstract class MutilateSheetExcelEntity {
+import java.io.Serializable;
+
+public abstract class MutilateSheetExcelEntity implements Serializable{
+    private static final long serialVersionUID = -2674187278930721946L;
     protected String sheetName;
 
     public String getSheetName() {

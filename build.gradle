@@ -51,7 +51,6 @@ allprojects {
         /* others */
         compile 'com.alibaba:fastjson:1.1.41'
         compile 'javax.transaction:jta:1.1'
-        compile 'javax.servlet:javax.servlet-api:3.1.0'
 
         /* test */
         testCompile 'junit:junit:4.11'

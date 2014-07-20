@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.util.HashSet;
 
 public class BaseExcelEntity extends MutilateSheetExcelEntity{
+    private static final long serialVersionUID = 265240531014878049L;
     private final HeaderMeta headerMeta = new HeaderMeta();
     private final HashSet<String> sheetNameSet = new HashSet<>();
     private String[] sheetMeta = null;
