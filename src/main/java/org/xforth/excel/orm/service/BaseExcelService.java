@@ -25,13 +25,13 @@ public class BaseExcelService<T extends BaseExcelEntity> {
     private static final Logger logger = LoggerFactory.getLogger(BaseExcelService.class);
     protected static final int MAX_HEADER_SIZE = 20;
 	private Class<T> entityClass;
-    private static HeaderMeta headerMeta;
-    private static String[] sheetNames;
-    private static final HashSet<String> sheetNameSet = new HashSet<>();
+    private HeaderMeta headerMeta;
+    private String[] sheetNames;
+    private final HashSet<String> sheetNameSet = new HashSet<>();
 
 	public BaseExcelService() throws IllegalAccessException, InstantiationException {
 		this.entityClass = ReflectionUtils.getSuperClassGenricType(getClass());
-        BaseExcelEntity entityInstance = entityClass.newInstance();
+        T entityInstance = entityClass.newInstance();
         headerMeta = entityInstance.getHeaderMeta();
         sheetNames = entityInstance.getSheetMeta();
         for(String sheetName:sheetNames){
