@@ -46,15 +46,15 @@ public class BaseExcelService<T extends BaseExcelEntity> {
 	/***
 	 * excelfile -> bean list
 	 * 
-	 * @param fis：Excel file inputstream
+	 * @param is：Excel file inputstream
 	 * @return List<T>
 	 * @throws IOException
      * @throws IllegalAccessException
      */
-	protected List<T> generateEntity(FileInputStream fis) throws IOException, IllegalAccessException, InstantiationException {
+	protected List<T> generateEntity(InputStream is) throws IOException, IllegalAccessException, InstantiationException {
         try {
             List<T> beanList = new ArrayList<T>();
-            POIFSFileSystem fs = new POIFSFileSystem(fis);
+            POIFSFileSystem fs = new POIFSFileSystem(is);
             HSSFWorkbook wb = new HSSFWorkbook(fs);
             if (sheetNames != null && sheetNames.length > 0) {
                 List<HSSFSheet> sheetList = ExcelUtils.getSheetsByNames(wb, sheetNames);
@@ -85,7 +85,7 @@ public class BaseExcelService<T extends BaseExcelEntity> {
             logger.error("generateEntity exception:"+e);
             throw e;
         }finally {
-            fis.close();
+            is.close();
         }
     }
 
