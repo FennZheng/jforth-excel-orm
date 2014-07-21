@@ -8,6 +8,8 @@ import org.xforth.excel.orm.entity.*;
 import org.xforth.excel.orm.exception.SheetNotFoundException;
 import org.xforth.excel.orm.util.ExcelUtils;
 import org.xforth.excel.orm.util.ReflectionUtils;
+
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -31,14 +33,16 @@ public class BaseExcelService<T extends BaseExcelEntity> {
 
 	public BaseExcelService() throws IllegalAccessException, InstantiationException {
 		this.entityClass = ReflectionUtils.getSuperClassGenricType(getClass());
+	}
+    @PostConstruct
+    public void init() throws IllegalAccessException, InstantiationException {
         T entityInstance = entityClass.newInstance();
         headerMeta = entityInstance.getHeaderMeta();
         sheetNames = entityInstance.getSheetMeta();
         for(String sheetName:sheetNames){
             sheetNameSet.add(sheetName);
         }
-	}
-
+    }
 	/***
 	 * excelfile -> bean list
 	 * 
