@@ -8,6 +8,8 @@ import org.xforth.excel.orm.entity.*;
 import org.xforth.excel.orm.exception.SheetNotFoundException;
 import org.xforth.excel.orm.util.ExcelUtils;
 import org.xforth.excel.orm.util.ReflectionUtils;
+
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -25,32 +27,34 @@ public class BaseExcelService<T extends BaseExcelEntity> {
     private static final Logger logger = LoggerFactory.getLogger(BaseExcelService.class);
     protected static final int MAX_HEADER_SIZE = 20;
 	private Class<T> entityClass;
-    private static HeaderMeta headerMeta;
-    private static String[] sheetNames;
-    private static final HashSet<String> sheetNameSet = new HashSet<>();
+    private HeaderMeta headerMeta;
+    private String[] sheetNames;
+    private final HashSet<String> sheetNameSet = new HashSet<>();
 
 	public BaseExcelService() throws IllegalAccessException, InstantiationException {
 		this.entityClass = ReflectionUtils.getSuperClassGenricType(getClass());
-        BaseExcelEntity entityInstance = entityClass.newInstance();
+	}
+    @PostConstruct
+    public void init() throws IllegalAccessException, InstantiationException {
+        T entityInstance = entityClass.newInstance();
         headerMeta = entityInstance.getHeaderMeta();
         sheetNames = entityInstance.getSheetMeta();
         for(String sheetName:sheetNames){
             sheetNameSet.add(sheetName);
         }
-	}
-
+    }
 	/***
 	 * excelfile -> bean list
 	 * 
-	 * @param fis：Excel file inputstream
+	 * @param is：Excel file inputstream
 	 * @return List<T>
 	 * @throws IOException
      * @throws IllegalAccessException
      */
-	protected List<T> generateEntity(FileInputStream fis) throws IOException, IllegalAccessException, InstantiationException {
+	protected List<T> generateEntity(InputStream is) throws IOException, IllegalAccessException, InstantiationException {
         try {
             List<T> beanList = new ArrayList<T>();
-            POIFSFileSystem fs = new POIFSFileSystem(fis);
+            POIFSFileSystem fs = new POIFSFileSystem(is);
             HSSFWorkbook wb = new HSSFWorkbook(fs);
             if (sheetNames != null && sheetNames.length > 0) {
                 List<HSSFSheet> sheetList = ExcelUtils.getSheetsByNames(wb, sheetNames);
@@ -81,7 +85,7 @@ public class BaseExcelService<T extends BaseExcelEntity> {
             logger.error("generateEntity exception:"+e);
             throw e;
         }finally {
-            fis.close();
+            is.close();
         }
     }
 
