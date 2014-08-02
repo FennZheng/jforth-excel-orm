@@ -4,9 +4,13 @@ import org.xforth.excel.orm.exception.SheetNotFoundException;
 
 import java.io.Serializable;
 
-public abstract class MutilateSheetExcelEntity implements Serializable{
+public abstract class MutilateSheetExcelEntity implements Serializable,IValidator{
     private static final long serialVersionUID = -2674187278930721946L;
     protected String sheetName;
+    /**
+     * //TODO create new sheet to show help info
+     */
+    protected String helpInfo;
 
     public String getSheetName() {
         return sheetName;
@@ -20,4 +24,12 @@ public abstract class MutilateSheetExcelEntity implements Serializable{
         }
     }
     protected abstract boolean validateSheetName(String sheetName);
+
+    public String getHelpInfo() {
+        return helpInfo;
+    }
+
+    public void setHelpInfo(String helpInfo) {
+        this.helpInfo = helpInfo;
+    }
 }

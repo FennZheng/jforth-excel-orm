@@ -50,4 +50,9 @@ public class BaseExcelEntity extends MutilateSheetExcelEntity{
     protected boolean validateSheetName(String sheetName) {
         return sheetNameSet.contains(sheetName);
     }
+
+    @Override
+    public void validator() {
+
+    }
 }
