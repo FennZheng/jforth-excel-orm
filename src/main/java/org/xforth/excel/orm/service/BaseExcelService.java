@@ -22,7 +22,7 @@ import java.util.List;
  * 3.export excel template
  * @param <T> extends BaseExcelEntity
  */
-public class BaseExcelService<T extends BaseExcelEntity> {
+public class BaseExcelService<T extends BaseExcelEntity>  extends ExcelGenerator {
 
     private static final Logger logger = LoggerFactory.getLogger(BaseExcelService.class);
     protected static final int MAX_HEADER_SIZE = 20;
@@ -133,14 +133,14 @@ public class BaseExcelService<T extends BaseExcelEntity> {
             os.close();
         }
 	}
-
-    private void fillBlankWorkbook(HSSFWorkbook wb) {
+    @Override
+    protected void fillBlankWorkbook(HSSFWorkbook wb) {
         for(String sheetName:sheetNames){
             fillBlankSheet(wb, sheetName);
         }
     }
-
-    private void fillWorkbook(SheetGroup sheetGroup, HSSFWorkbook wb) {
+    @Override
+    protected void fillWorkbook(SheetGroup sheetGroup, HSSFWorkbook wb) {
         List<String> headerTitleList = headerMeta.getHeaderTitle();
         for(String sheetName:sheetNames){
             List<BaseExcelEntity> entityList = sheetGroup.getBySheetName(sheetName);
@@ -151,13 +151,13 @@ public class BaseExcelService<T extends BaseExcelEntity> {
             }
         }
     }
-
-    private void fillBlankSheet(HSSFWorkbook wb, String sheetName) {
+    @Override
+    protected void fillBlankSheet(HSSFWorkbook wb, String sheetName) {
         HSSFSheet sheet = wb.createSheet(sheetName);
         ExcelUtils.writeSheetHeader(sheet, headerMeta);
     }
-
-    private void fillSheet(HSSFWorkbook wb, List<String> headerTitleList, String sheetName, List<BaseExcelEntity> entityList) {
+    @Override
+    protected void fillSheet(HSSFWorkbook wb, List<String> headerTitleList, String sheetName, List<BaseExcelEntity> entityList) {
         HSSFSheet sheet = wb.createSheet(sheetName);
         ExcelUtils.writeSheetHeader(sheet, headerMeta);
         int rowNum = 1;
